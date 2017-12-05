@@ -1,0 +1,101 @@
+ESGI - Cours Zend Framework 3 - Decembre 2017
+---------------------------------------------
+
+# Session 1
+
+## Présentation de la documentation
+
+Zend Framework existe en 3 versions majeurs : 1, 2 et 3 (on s'en doutait un peu mais ces derniers temps c'est pas si évident... i.e. Windows, PHP, NodeJs...).
+
+Les versions 1 et 2 ont une documentation sur le site [https://framework.zend.com/](https://framework.zend.com/) (respectivement [ici](https://framework.zend.com/manual/1.12/en/manual.html) et [ici](https://framework.zend.com/manual/2.4/en/index.html).
+
+La version 3 est documentée sur [https://docs.zendframework.com/](https://docs.zendframework.com/). La documentation est en deux parties :
+
+* les tutoriels (qui nous expliquent fonctionnellement comment agencer les composants pour faire une chose, i.e. [`Getting Started with Zend Framework MVC Applications`](https://docs.zendframework.com/tutorials/getting-started/overview/))
+* les références des composants (qui nous donnent les détails techniques de chaque composants, notamment la syntaxe à utiliser, i.e. [Zend Service Manager](https://docs.zendframework.com/zend-servicemanager/)).
+
+N'oubiez pas que la meilleure documentation c'est la lecture du code lui même !
+
+## Présentation du Skeleton
+
+Zend Framework propose un skelette d'application, qui contient notamment une structure MVC qui peut servir de base à vos projets.
+
+[Zend Skeleton Application](https://github.com/zendframework/ZendSkeletonApplication)
+
+Seul le dossier public est exposé à l'exterieur du serveur (voir la notion de `document root` dans Apache, Nginx, LightHTTPD, IIS, Caddy ou autre).
+
+Le point d'entrée unique de l'application, comme dans la plupart des frameworks modernes, est `public/index.php`. Celui-ci est configuré pour fonctionner avec le serveur de développement PHP intégré (`php -S 0.0.0.0:8080 -t public/ public/index.php`) grâce à la présence des lignes suivantes qui permettent de servir le contenu static (les fichiers css et js) :
+
+```php
+// Decline static file requests back to the PHP built-in webserver
+if (php_sapi_name() === 'cli-server') {
+    $path = realpath(__DIR__ . parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
+    if (__FILE__ !== $path && is_file($path)) {
+        return false;
+    }
+    unset($path);
+}
+```
+
+Autre ligne notable dans le fichier, le `chdir(dirname(__DIR__));` qui permettra ailleurs dans l'application d'utiliser des liens relatifs vers les fichiers en commençant à exprimer le lien depuis la racine du projet.
+
+Configuration de composer mise à part, il reste donc uniquement les dernières lignes permettant de configurer puis lancer l'application.
+
+On distingue deux types de configurations : 
+
+* la configuration de l'application (de `Zend\Application`), qui va entre autre exprimer comment aller chercher la configuration du contenu de l'application
+* la configuration du contenu de l'application, qui va permettre la configuration des composants utilisés dans l'application (comme le `ServiceManager`, les accès à la base de données et autre choses du genre)
+
+Le code suivant est issu de l'`index.php` et nous permet de chercher la configuration que l'on va ensuite passer à `Zend\Application` :
+
+```php
+// Retrieve configuration
+$appConfig = require __DIR__ . '/../config/application.config.php';
+if (file_exists(__DIR__ . '/../config/development.config.php')) {
+    $appConfig = ArrayUtils::merge($appConfig, require __DIR__ . '/../config/development.config.php');
+}
+```
+
+On constate d'abord la syntaxe utilisant le `require`, que l'on retrouvera dans beaucoup de parties du framework. Le fichier appelé par le `require` retourne un `array`, qui est donc assigné à la variable `$appConfig`.
+
+On cherche ensuite à savoir si une configuration spécifique au développement existe, en quel cas celle-ci sera mergée avec le tableau précédemment récupéré. Noter le `ArrayUtils` permettant un merge recursif, contrairement à `array_merge`.
+
+**Insérer ici une section sur la configuration de Zend Application, et annoncer les sections sur la configuration de dev et les modules.**
+
+Une fois cette configuration récupérée, on la passe à l'application.
+
+```php
+Application::init($appConfig)->run();
+```
+
+**Expliquer le principe de boucle de dispatch (routing, dispatch...)**
+
+## Les modules
+
+Les modules sont les premières choses que le framework va charger (dans la [méthode `init` de `Zend\Application`](https://github.com/zendframework/zend-mvc/blob/master/src/Application.php) : `$serviceManager->get('ModuleManager')->loadModules();`). Les classes `Module` de chaque module déclarées dans le fichier `modules.config.php` vont être utilisées dans l'ordre utilisé pour aller chercher les configurations des modules à l'aide de différents listeners qui vont s'occuper de récupérer et merger les configs entre autre (voir le [`ModuleManager`](https://github.com/zendframework/zend-modulemanager/tree/master/src/Listener)).
+
+**Annoncer un chapitre sur les events et listeners**
+
+## Installation du projet
+Dans le dossier où l'on veut le projet :
+
+```
+composer create-project -s dev zendframework/skeleton-application .
+```
+
+Questions :
+
+`Do you want a minimal install (no optional packages)? Y/n` => `Y`
+
+`Do you want to remove the existing VCS (.git, .svn..) history? [Y,n]?` => `Y`
+
+**Inserer une explication du mode developpement**
+
+```
+zf-development-mode enable
+You are now in development mode.
+```
+
+
+
+
