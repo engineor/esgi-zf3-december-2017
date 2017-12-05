@@ -24,6 +24,16 @@ return [
                     ],
                 ],
             ],
+            'ping' => [
+                'type' => Literal::class,
+                'options' => [
+                    'route'    => '/ping',
+                    'defaults' => [
+                        'controller' => Controller\PingController::class,
+                        'action'     => 'ping',
+                    ],
+                ],
+            ],
             'application' => [
                 'type'    => Segment::class,
                 'options' => [
@@ -39,6 +49,7 @@ return [
     'controllers' => [
         'factories' => [
             Controller\IndexController::class => InvokableFactory::class,
+            Controller\PingController::class => InvokableFactory::class,
         ],
     ],
     'view_manager' => [
@@ -50,11 +61,9 @@ return [
         'template_map' => [
             'layout/layout'           => __DIR__ . '/../view/layout/layout.phtml',
             'application/index/index' => __DIR__ . '/../view/application/index/index.phtml',
+            'application/ping/ping' => __DIR__ . '/../view/application/ping/ping.phtml',
             'error/404'               => __DIR__ . '/../view/error/404.phtml',
             'error/index'             => __DIR__ . '/../view/error/index.phtml',
-        ],
-        'template_path_stack' => [
-            __DIR__ . '/../view',
         ],
     ],
 ];

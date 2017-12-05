@@ -96,6 +96,85 @@ zf-development-mode enable
 You are now in development mode.
 ```
 
+Lancement du projet avec `docker-compose up -d`.
 
+## Ajout d'une page *"ping"*
 
+1. Ajout de la route `/ping`
+2. Ajout de la configuration du container de controllers
+3. Ajout du controller lui-même
+4. Ajout de la vue
 
+### Ajout de la route `/ping`
+
+Dans `module/Application/config/module.config.php`, ajouter une route basée sur la route `home`.
+
+**Inserer une explication sur Literal/Segment et les autres routes possibles**
+
+```
+'ping' => [
+    'type' => Literal::class,
+    'options' => [
+        'route'    => '/ping',
+        'defaults' => [
+            'controller' => Controller\PingController::class,
+            'action' => 'ping',
+        ],
+    ],
+],
+```
+
+Noter :
+
+1. la valeur associée à la clé `controller` est l'alias du service à aller chercher dans le container de controller (le membre de gauche dans le tableau `controllers` => `factories`)
+2. on fait une route literal car on connait la string exacte à passer dans l'url pour accéder à la page
+
+### Ajout de la configuration du container de controllers
+
+Sur le même principe que le controller existant :
+
+```
+'controllers' => [
+    'factories' => [
+        Controller\IndexController::class => InvokableFactory::class,
+        Controller\PingController::class => InvokableFactory::class,
+    ],
+],
+```
+
+### Ajout du controller lui-même
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace Application\Controller;
+
+use Zend\Mvc\Controller\AbstractActionController;
+use Zend\View\Model\ViewModel;
+
+final class PingController extends AbstractActionController
+{
+    public function pingAction() : ViewModel
+    {
+        return new ViewModel([
+            'time' => new \DateTimeImmutable(),
+        ]);
+    }
+}
+```
+
+### Ajout de la vue
+
+### Discussions
+
+* template_path_stack / template_map
+* erreurs rencontrées :
+  * controller non trouvé
+  * config de développement non enable => cache donc pas de route en plus
+  * fichier de vue manquant
+* Short echo syntax
+* inline docblock dans la vue
+* layout
+* affichage des détails d'exceptions
