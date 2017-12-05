@@ -49,7 +49,7 @@ return [
     'controllers' => [
         'factories' => [
             Controller\IndexController::class => InvokableFactory::class,
-            Controller\PingController::class => InvokableFactory::class,
+            Controller\PingController::class => Controller\PingControllerFactory::class,
         ],
     ],
     'view_manager' => [

@@ -178,3 +178,61 @@ final class PingController extends AbstractActionController
 * inline docblock dans la vue
 * layout
 * affichage des détails d'exceptions
+
+## Injection de dépendences
+
+Objectif : passer le `DateTimeImmutable` à notre controller pour ne plus le créer dedans.
+
+1. ajouter un constructeur
+2. ajouter la factory qui va avec
+
+### Ajouter un constructeur
+
+Dans le controller :
+
+```php
+/**
+ * @var \DateTimeImmutable
+ */
+private $dateTime;
+
+public function __construct(\DateTimeImmutable $dateTime)
+{
+    $this->dateTime = $dateTime;
+}
+```
+
+### ajouter la factory qui va avec
+
+**Bien expliquer les factories et le InvokableFactory**
+
+Dans la config du module application (`module/Application/config/module.config.php`) :
+
+```php
+'controllers' => [
+    'factories' => [
+       Controller\IndexController::class => InvokableFactory::class,
+       Controller\PingController::class => Controller\PingControllerFactory::class,
+    ],
+],
+```
+
+Puis dans `module/Application/src/Controller\PingControllerFactory.php` :
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace Application\Controller;
+
+final class PingControllerFactory
+{
+    public function __invoke() : PingController
+    {
+        $dateTime = new \DateTimeImmutable();
+
+        return new PingController($dateTime);
+    }
+}
+```
