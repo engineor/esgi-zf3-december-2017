@@ -22,7 +22,7 @@ final class PingController extends AbstractActionController
     public function pingAction() : ViewModel
     {
         return new ViewModel([
-            'date' => new \DateTimeImmutable(),
+            'date' => $this->dateTime,
         ]);
     }
 }

@@ -52,6 +52,11 @@ return [
             Controller\PingController::class => Controller\PingControllerFactory::class,
         ],
     ],
+    'service_manager' => [
+        'factories' => [
+            \DateTimeImmutable::class => \Application\DateTimeImmutableFactory::class
+        ],
+    ],
     'view_manager' => [
         'display_not_found_reason' => true,
         'display_exceptions'       => true,
@@ -65,5 +70,8 @@ return [
             'error/404'               => __DIR__ . '/../view/error/404.phtml',
             'error/index'             => __DIR__ . '/../view/error/index.phtml',
         ],
+    ],
+    'app' => [
+        'date' => '2017-12-01',
     ],
 ];

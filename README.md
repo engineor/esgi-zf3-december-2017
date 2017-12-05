@@ -236,3 +236,99 @@ final class PingControllerFactory
     }
 }
 ```
+
+### extra : créer une factory pour le `DateTimeImmutable`
+
+```
+'service_manager' => [
+    'factories' => [
+        \DateTimeImmutable::class => \Application\DateTimeImmutableFactory::class
+    ],
+],
+```
+
+`module/Application/src/DateTimeImmutableFactory.php` :
+
+```
+<?php
+
+declare(strict_types=1);
+
+namespace Application;
+
+final class DateTimeImmutableFactory
+{
+    public function __invoke() : \DateTimeImmutable
+    {
+        return new \DateTimeImmutable();
+    }
+}
+```
+
+**Expliquer le service_manager et les différents SM en se basant sur celui des controllers**
+
+### extra : utiliser le container pour récupérer le `DateTimeImmutable`
+
+Dans la factory du controller :
+
+```
+<?php
+
+declare(strict_types=1);
+
+namespace Application\Controller;
+
+use Psr\Container\ContainerInterface;
+
+final class PingControllerFactory
+{
+    public function __invoke(ContainerInterface $container) : PingController
+    {
+        $dateTime = $container->get(\DateTimeImmutable::class);
+
+        return new PingController($dateTime);
+    }
+}
+```
+
+### extra : supprimer la factory inutile
+
+Pas de paramètre requis dans le constructeur de `DateTimeImmutable`, donc on pourrait utiliser une `InvokableFactory` ! **(mais ici on garde notre factory custom pour la suite)**
+
+## Injecter de la configuration
+
+1. ajouter une config custom (i.e. une date en string à passer au `DateTimeImmutable`)
+2. récupérer la config dans la factory du `DateTimeImmutable`
+
+`module/Application/config/module.config.php` :
+
+```php
+'app' => [
+   'date' => '2017-12-06',
+],
+```
+
+Puis dans la factory (`module/Application/src/DateTimeImmutableFactory.php`) :
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace Application;
+
+use Psr\Container\ContainerInterface;
+
+final class DateTimeImmutableFactory
+{
+    public function __invoke(ContainerInterface $container) : \DateTimeImmutable
+    {
+        $config = $container->get('config');
+        if (!isset($config['app']['date']) || !is_string($config['app']['date'])) {
+            throw new \Exception('Config manquante');
+        }
+
+        return new \DateTimeImmutable($config['app']['date']);
+    }
+}
+```
