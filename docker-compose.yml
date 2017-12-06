@@ -1,7 +1,27 @@
-zf:
-  build: .
-  dockerfile: Dockerfile
-  ports:
-   - "8080:80"
-  volumes:
-   - .:/var/www
+version: "3.3"
+services:
+  zf:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${SKEL_EXTERNAL_PORT:-8080}:80"
+    volumes:
+      - .:/var/www
+    depends_on:
+      - database
+    environment:
+      - SKEL_DB_HOST=database
+      - SKEL_DB_NAME=demo
+      - SKEL_DB_USER=demo
+      - SKEL_DB_PASS=demo
+      - SKEL_DB_PORT=3306
+  database:
+    image: mysql:5.7
+    expose:
+      - "3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=demo
+      - MYSQL_DATABASE=demo
+      - MYSQL_USER=demo
+      - MYSQL_PASSWORD=demo

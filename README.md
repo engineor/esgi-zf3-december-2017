@@ -332,3 +332,11 @@ final class DateTimeImmutableFactory
     }
 }
 ```
+
+# Doctrine
+
+Doctrine ORM Module vs Doctrine Module vs DoctrineORMBundle...
+
+Configuration
+
+Docker compose avec DB
