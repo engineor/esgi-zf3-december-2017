@@ -335,8 +335,254 @@ final class DateTimeImmutableFactory
 
 # Doctrine
 
-Doctrine ORM Module vs Doctrine Module vs DoctrineORMBundle...
+## Qu'est ce que Doctrine
 
-Configuration
+Doctrine est composé de plusieurs parties :
 
-Docker compose avec DB
+ * Un [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping), c'est à dire une couche permettant d'utiliser des objets dans le code PHP sans se préoccuper du schema de base de données.
+ * Un [DBAL](https://en.wikipedia.org/wiki/Database_abstraction_layer), c'est à dire une interface d'abstraction à la base de données, qui va permettre l'utilisation de la même API pour contacter les différents [RDBMS](https://en.wikipedia.org/wiki/Relational_database_management_system)
+ * Un [système de migration](https://en.wikipedia.org/wiki/Schema_migration), c'est à dire une solution permettant de faire des versions du schema de base de données
+ * Un [système de fixtures](https://en.wikipedia.org/wiki/Database_seeding), permettant de charger des données dans la base à partir d'objets préconçus, souvent pour préparer une base de développement ou de tests
+ 
+Ces différents projets sont disponibles sur le [github de Doctrine](https://github.com/doctrine).
+ 
+En plus de ces projets, on trouvera de `*Bundle` et `*Module`, qui sont les intégrations au frameworks :
+ 
+ * `DoctrineModule` = intégration du module de DBAL à Zend Framework
+ * `DoctrineORMModule` = intégration du module d'ORM à Zend Framework
+ * `DoctrineBundle` = intégration du DBAL et de l'ORM à Symfony
+ 
+On note donc la sémantique du nom, `Bundle` pour Symfony, `Module` pour Zend Framework.
+
+Pour la suite du cours, nous ne verrons que l'ORM, qui se base lui-même sur le DBAL.
+ 
+## Configuration
+
+Pour configurer Doctrine ORM dans notre projet, il faut se référer à la documentation fournie sur le [compte Github du projet](https://github.com/doctrine/DoctrineORMModule/).
+
+Premièrement, il faut récupérer le code à l'aide de Composer :
+
+```bash
+composer require doctrine/doctrine-orm-module
+```
+
+Comme d'habitude Composer va demander où installer la configuration, soit dans notre cas `config/modules.config.php`.
+
+On peut constater que `DoctrineORMModule` est chargé après `DoctrineModule`, car il existe une dépendence entre les deux, comme indiqué dans la méthode `getModuleDependencies` de [Module.php](https://github.com/doctrine/DoctrineORMModule/blob/master/src/DoctrineORMModule/Module.php).
+
+Il faut ensuite configurer doctrine ORM conformément à ce qui est décrit dans le [README.md](https://github.com/doctrine/DoctrineORMModule/blob/master/README.md) du projet.
+
+### Configuration des entités
+
+Considérant que les entités seront définies dans notre module `Application`, on peut mettre la configuration fournie dans `module/Application/config/module.config.php`.
+
+```php
+'doctrine' => [
+    'driver' => [
+        // defines an annotation driver with two paths, and names it `my_annotation_driver`
+        'application_driver' => [
+            'class' => \Doctrine\ORM\Mapping\Driver\AnnotationDriver::class,
+            'cache' => 'array',
+            'paths' => [
+                __DIR__.'/../src/Entity/',
+            ],
+        ],
+
+        // default metadata driver, aggregates all other drivers into a single one.
+        // Override `orm_default` only if you know what you're doing
+        'orm_default' => [
+            'drivers' => [
+                // register `application_driver` for any entity under namespace `Application\Entity`
+                'Application\Entity' => 'application_driver',
+            ],
+        ],
+    ],
+],
+```
+
+La seconde partie du tableau défini sous la clé `orm_default` l'`EntityManager`. Pour en apprendre plus sur Doctrine et son fonctionnement il faut lire la [documentation](http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/).
+
+On constate que le membre de gauche du tableau correspond au **namespace** qu'auront nos entités. Le membre de droite correspond au *driver* à utiliser pour les entités de ce namespace.
+
+Par exemple, si mon entité est `Application\Entity\Film`, je rentre dans ce cas, et mon driver sera donc `application_driver`, qui fait référence au `driver` en haut du tableau, qui nous dit donc que nous allons utiliser les annotations pour configurer l'entité, utiliser un cache en mémoire (array) et nous donne le(s) chemin(s) dans le projet dans lequel/lesquels chercher nos entités.
+
+### Configuration de la connection
+
+La dernière partie de la configuration consiste à indiquer à les informations de connection à la base de donnée.
+
+#### Configuration locale
+
+Comme vu précédemment, par défaut Zend Framework nous propose de charger les fichiers de configuration suivant le pattern suivant (`config/application.config.php`) :
+
+```php
+__DIR__.'/autoload/{{,*.}global,{,*.}local}.php'
+```
+
+On peut donc mettre cette configuration dans `config/autoload`, soit dans un fichier `*.global.php`, `global.php`, `*.local.php` ou encore `local.php`.
+
+Étant donné que cette configuration contient des identifiants d'accès à la base de données, il ne faut pas le commiter, donc faire un fichier local. Nous pouvons donc créer `config/autoload/db.local.php` et mettre notre configuration dedans.
+
+```php
+<?php
+
+use Doctrine\DBAL\Driver\PDOMySql\Driver;
+
+return [
+    'doctrine' => [
+        'connection' => [
+            // default connection name
+            'orm_default' => [
+                'driverClass' => Driver::class,
+                'params' => [
+                    'host'     => 'localhost',
+                    'port'     => '3306',
+                    'user'     => 'username',
+                    'password' => ?? 'password',
+                    'dbname'   => 'database',
+                ],
+            ],
+        ],
+    ],
+];
+
+```
+
+Ce fichier créé étant ignoré par Git, il ne se retrouvera pas sur le serveur de versionning ([exemple de problème lorsque l'on commit des identifiants](https://www.theregister.co.uk/2015/01/06/dev_blunder_shows_github_crawling_with_keyslurping_bots/)).
+
+Il est donc de bonne pratique de copier notre fichier de configuration et de nommer le nouveau `doctrine.local.php.dist` (qui sera donc commité), retirer les identifiants de cette version, de sorte à donner un template de configuration aux autres développeurs.
+
+#### Configuration avec des variables d'environnement
+
+Le [twelve-factor appl manifesto](https://12factor.net/fr/), qui défini comme indiqué dans le nom 12 points pour faire une application moderne industrialisé, indique que la configuration de l'application devrait se faire via les variables d'environnement.
+
+Docker vient nous faciliter la tâche pour le développent grace à la clé `environment` dans les services de docker-compose ou simplement le flag `-e` pour le lancement d'un container simple.
+
+Dans ce cas, nous pouvons donc mettre la configuration directement dans le fichier `config/autoload/db.global.php`, et remplacer les valeurs par `$_ENV['MY_ENV_VAR']`.
+
+La bonne pratique Unix veut que les applications préfixent leurs variables d'environnement, nous appellerons donc les notres `SKEL_DB_*` (`SKEL` pour skeleton application).
+
+```php
+<?php
+
+use Doctrine\DBAL\Driver\PDOMySql\Driver;
+
+return [
+    'doctrine' => [
+        'connection' => [
+            // default connection name
+            'orm_default' => [
+                'driverClass' => Driver::class,
+                'params' => [
+                    'host'     => $_ENV['SKEL_DB_HOST'],
+                    'port'     => $_ENV['SKEL_DB_PORT'],
+                    'user'     => $_ENV['SKEL_DB_USER'],
+                    'password' => $_ENV['SKEL_DB_PASS'],
+                    'dbname'   => $_ENV['SKEL_DB_NAME'],
+                ],
+            ],
+        ],
+    ],
+];
+```
+
+Il faut donc ensuite changer le `docker-compose.yml` pour refleter ces changements (on ajoute une base de données, on ajoute les variables d'environnement).
+
+```yaml
+version: "3.3"
+services:
+  zf:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www
+    depends_on:
+      - database
+    environment:
+      - SKEL_DB_HOST=database
+      - SKEL_DB_NAME=demo
+      - SKEL_DB_USER=demo
+      - SKEL_DB_PASS=demo
+      - SKEL_DB_PORT=3306
+  database:
+    image: mysql:5.7
+    expose:
+      - "3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=demo
+      - MYSQL_DATABASE=demo
+      - MYSQL_USER=demo
+      - MYSQL_PASSWORD=demo
+```
+
+Ces informations peuvent être commitées car elles sont communes pour tous les développeurs et ne posent pas de risque de sécurité.
+
+#### Configuration avec `$_ENV` sans Docker
+
+Deux possibilités s'offrent à vous :
+
+1. ajouter des variables d'environnement sur votre système
+2. utiliser une librairie qui émule les variables d'environnement
+
+La solution numéro 1 pose problème si vous voulez démarrer plusieurs instances de la même application avec différentes configurations.
+
+Pour la solution 2, vous pouvez utiliser `symfony/dotenv`. Dans le scénario suivant, on considère que dotEnv est utilisé pour le développement, mais que les variables d'environnement seront utilisées sur la production.
+
+Copier la configuration du chapitre au dessus, donc dans `config/autoload/db.global.php`.
+
+Ensuite, on va prendre `symfony/dotenv` en dépendence de développement pour notre projet :
+
+```bash
+composer require --dev symfony/dotenv
+``` 
+
+Il reste à modifier le code comme indiqué sur la [documentation de Symfony](https://symfony.com/doc/current/components/dotenv.html). Notre point d'entré unique est `public/index.php`, c'est donc là que le chargement de dotEnv doit survenir, à la suite du chargement des vendor car il utilise les classes chargées.
+
+La première étape consiste à vérifier si la classe existe (elle n'existera pas en prod à cause du `--dev`). Ensuite, il faut vérifier si le fichier `.env` existe. Puis charger la config si les deux sont vrai.
+
+```php
+// Load environment variables
+if (class_exists(Dotenv::class) && is_file(__DIR__ . '/../.env')) {
+    $dotenv = new Dotenv();
+    $dotenv->load(__DIR__ . '/../.env');
+}
+``` 
+
+Le fichier `.env` (à la racine du projet donc) doit être ajouté au `.gitignore`, et un fichier `.gitignore.dist` doit être créé pour donner le skeleton des valeurs attendues aux autres développeurs :
+
+```dotenv
+SKEL_DB_HOST=
+SKEL_DB_NAME=
+SKEL_DB_USER=
+SKEL_DB_PASS=
+SKEL_DB_PORT=
+```
+
+### Executer Doctrine CLI
+
+Il faut ensuite faire fonctionner Doctrine pour valider notre configuration. La commande php est la suivante :
+
+```bash
+php vendor/bin/doctrine-module
+```
+
+**Note** : sous Windows il ne faut pas utiliser `php` devant.
+
+Sans argument, cette commande va lister les arguments possibles.
+
+La même commande suivi de `orm:info` doit permettre d'indiquer si le système est capable de trouver nos entités.
+
+**Note** : pour ceux qui utilise `docker-compose` (ce que je recommande), il faut executer ces commandes dans le cadre de votre container. La commande devient donc :
+
+```bash
+docker-compose run --rm zf php vendor/bin/doctrine-module orm:info
+``` 
+
+**Note** : il se peut que le `Dockerfile` initial ne charge pas les drivers mysql pour pdo. Dans ce cas, changez le `Dockerfile` et ajoutez les modules.
+
+```
+&& docker-php-ext-install pdo pdo_mysql zip \
+```
+
