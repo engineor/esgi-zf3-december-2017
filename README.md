@@ -437,7 +437,7 @@ return [
                     'host'     => 'localhost',
                     'port'     => '3306',
                     'user'     => 'username',
-                    'password' => ?? 'password',
+                    'password' => 'password',
                     'dbname'   => 'database',
                 ],
             ],
@@ -581,6 +581,8 @@ docker-compose run --rm zf php vendor/bin/doctrine-module orm:info
 ``` 
 
 **Note** : il se peut que le `Dockerfile` initial ne charge pas les drivers mysql pour pdo. Dans ce cas, changez le `Dockerfile` et ajoutez les modules.
+
+**Note** : à chaque changement du `Dockerfile` et du `docker-compose.yml`, il faut executer `docker-compose up -d --build` pour recréer les containers.
 
 ```
 && docker-php-ext-install pdo pdo_mysql zip \
