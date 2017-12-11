@@ -568,7 +568,7 @@ Il faut ensuite faire fonctionner Doctrine pour valider notre configuration. La 
 php vendor/bin/doctrine-module
 ```
 
-**Note** : sous Windows il ne faut pas utiliser `php` devant.
+**Note** : sous Windows il ne faut pas utiliser `php` devant (que ce soit sous directement sur le système hôte ou sur Docker).
 
 Sans argument, cette commande va lister les arguments possibles.
 
