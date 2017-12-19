@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace Cinema\Controller;
 
-use Doctrine\ORM\EntityRepository;
+use Application\Repository\FilmRepository;
+use Zend\Form\Element\Text;
+use Zend\Form\Form;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 
 final class IndexController extends AbstractActionController
 {
     /**
-     * @var EntityRepository
+     * @var FilmRepository
      */
     private $filmRepository;
 
-    public function __construct(EntityRepository $filmRepository)
+    public function __construct(FilmRepository $filmRepository)
     {
         $this->filmRepository = $filmRepository;
     }
