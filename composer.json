@@ -18,7 +18,9 @@
         "zfcampus/zf-development-mode": "^3.0",
         "doctrine/doctrine-orm-module": "^1.1",
         "ramsey/uuid": "^3.7",
-        "symfony/dotenv": "^4.0"
+        "symfony/dotenv": "^4.0",
+        "zendframework/zend-i18n": "^2.7",
+        "zendframework/zend-form": "^2.11"
     },
     "autoload": {
         "psr-4": {

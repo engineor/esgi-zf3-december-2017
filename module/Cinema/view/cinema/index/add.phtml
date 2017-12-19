@@ -1,0 +1,12 @@
+<h1>Add a film</h1>
+
+<?php
+    $form = $this->form; /* @var $form \Zend\Form\Form */
+?>
+
+<?= $this->form()->openTag($form); ?>
+
+<?= $this->formLabel($form->get('title')) ?>
+<?= $this->formInput($form->get('title')) ?>
+
+<?= $this->form()->closeTag($form); ?>
