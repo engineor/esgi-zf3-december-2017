@@ -588,3 +588,129 @@ docker-compose run --rm zf php vendor/bin/doctrine-module orm:info
 && docker-php-ext-install pdo pdo_mysql zip \
 ```
 
+## Ajouter une entité
+
+Une entité est une classe simple (Plain Old PHP Object, POPO), qui sera par la suite étendue par Doctrine ORM dans notre
+implementation (attention de bien séparer le concept d'entité et son implementation dans Doctrine ORM, ici les classes
+ne peuvent pas être final, mais c'est un problème de Doctrine ORM, les entités peuvent conceptuellement être finales).
+
+Selon votre configuration précedemment définie, nous allons positionner une nouvelle classe dans le dossier contenant
+les entités (ici `module/Application/src/Entity`). La commande `php vendor/bin/doctrine-module orm:info` devrait alors
+retourner l'entité trouvée.
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace Application\Entity;
+
+use Ramsey\Uuid\Uuid;
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * Class Film
+ *
+ * Attention : Doctrine génère des classes proxy qui étendent les entités, celles-ci ne peuvent donc pas être finales !
+ *
+ * @package Application\Entity
+ * @ORM\Entity
+ * @ORM\Table(name="films")
+ */
+class Film
+{
+    /**
+     * @ORM\Id
+     * @ORM\Column(type="string", length=36)
+     **/
+    private $id;
+
+    /**
+     * @ORM\Column(type="string", length=50, nullable=false)
+     */
+    private $title;
+
+    /**
+     * @ORM\Column(type="string", length=2000, nullable=false)
+     */
+    private $description = '';
+
+    public function __construct()
+    {
+        $this->id = Uuid::uuid4()->toString();
+    }
+
+    /**
+     * @return string
+     */
+    public function getTitle() : string
+    {
+        return $this->title;
+    }
+
+    /**
+     * @param string $title
+     */
+    public function setTitle(string $title) : void
+    {
+        $this->title = $title;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDescription() : string
+    {
+        return $this->description;
+    }
+
+    /**
+     * @param string $description
+     */
+    public function setDescription(string $description) : void
+    {
+        $this->description = $description;
+    }
+}
+```
+
+Ici notre [entité est dite anémique](https://beberlei.de/2012/08/22/building_an_object_model__no_setters_allowed.html), car elle ne contient que des accesseurs (aka. `getters` et `setters`).
+Une entité a le rôle de garant de l'intégrité des données métier, et devrait donc ne pas avoir de setters mais uniquement
+une création via le constructeur et des getters. Les méthodes de l'entité devraient lever des exceptions pour les
+comportements non attendus.
+
+Il est possible de faire des setters `fluents`, c'est à dire qui retournent l'objet sur lequel ils ont effectué le
+changement d'état :
+
+```php
+    /**
+     * @param string $description
+     * @return Film  
+     */
+    public function setDescription(string $description) : Film
+    {
+        $this->description = $description;
+        
+        return $this;
+    }
+
+```
+
+Le [fluent interface design pattern](https://ocramius.github.io/blog/fluent-interfaces-are-evil/) est considéré comme un antipattern sauf dans le cas d'un builder (comme Zend Db, Doctrine), car il
+incite les développeurs à chainer un maximum de méthodes et donc faire plein de changements d'états successifs plutôt 
+
+## Créer le schema
+
+Une fois l'entité créée il ne reste qu'à executer doctrine pour créer le schema de base de données :
+
+```
+php vendor/bin/doctrine-module orm:schema-tool:update
+```
+
+L'option `--dump-sql` permet de vérifier le script SQL qui sera effectué, alors que `--force` permet d'executer le SQL
+sur la base de données en question.
+
+## Lister les données
+
+Pour lister les données, il faut injecter le repository dans notre controlleur (via sa factory donc).
+
