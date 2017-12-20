@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Cinema\Controller;
 
-use Application\Entity\Film;
+use Cinema\Entity\Film;
 use Cinema\Form\FilmForm;
 use Doctrine\ORM\EntityManager;
 use Psr\Container\ContainerInterface;

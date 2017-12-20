@@ -45,5 +45,8 @@
         ],
         "serve": "php -S 0.0.0.0:8080 -t public public/index.php",
         "test": "phpunit"
+    },
+    "require-dev": {
+        "symfony/var-dumper": "^4.0"
     }
 }

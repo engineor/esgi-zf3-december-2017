@@ -6,7 +6,8 @@
 
 <?= $this->form()->openTag($form); ?>
 
-<?= $this->formLabel($form->get('title')) ?>
-<?= $this->formInput($form->get('title')) ?>
+<?= $this->formRow($form->get('title')) ?>
+
+<?= $this->formInput($form->get('submit')) ?>
 
 <?= $this->form()->closeTag($form); ?>

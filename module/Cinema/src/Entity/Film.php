@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Application\Entity;
+namespace Cinema\Entity;
 
 use Ramsey\Uuid\Uuid;
 use Doctrine\ORM\Mapping as ORM;
@@ -13,7 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
  * Attention : Doctrine génère des classes proxy qui étendent les entités, celles-ci ne peuvent donc pas être finales !
  *
  * @package Application\Entity
- * @ORM\Entity(repositoryClass="\Application\Repository\FilmRepository")
+ * @ORM\Entity(repositoryClass="\Cinema\Repository\FilmRepository")
  * @ORM\Table(name="films")
  */
 class Film
@@ -34,9 +34,11 @@ class Film
      */
     private $description = '';
 
-    public function __construct()
+    public function __construct(string $title, string $description = '')
     {
         $this->id = Uuid::uuid4()->toString();
+        $this->title = $title;
+        $this->description = $description;
     }
 
     /**
@@ -47,25 +49,11 @@ class Film
         return $this->title;
     }
 
-    /**
-     * @param string $title
-     */
-    public function setTitle(string $title) : void
-    {
-        $this->title = $title;
-    }
-
-    /**
-     * @return string
-     */
     public function getDescription() : string
     {
         return $this->description;
     }
 
-    /**
-     * @param string $description
-     */
     public function setDescription(string $description) : void
     {
         $this->description = $description;
